@@ -11,21 +11,29 @@ import sys
 from zmq.constants import *
 from ctypes import *
 
-march = os.uname()[4]
-
-if march == 'aarch64':
-    cpu_vendor = 'arm'
-elif march == 'x86_64' or march == 'i386' or march == 'i686':
-    cpu_vendor = 'intel'
-elif march == 'ppc64le':
-    cpu_vendor = 'ppc'
-else:
-    raise Exception('Unknown CPU architecture: ' + march)
-
+curr_platform = sys.platform
 cpu_bits   = '64bit' if sys.maxsize > 0xffffffff else '32bit'
-
 cur_dir = os.path.abspath(os.path.dirname(__file__))
-libzmq = CDLL(os.path.join(cur_dir, cpu_vendor, cpu_bits, 'libzmq.so'), use_errno=True)
+libzmq = None
+
+if (curr_platform == 'win32'):
+    cpu_vendor = 'win'
+    libzmq = CDLL(os.path.join(cur_dir, cpu_vendor, cpu_bits, 'libzmq.dll'), use_errno=True)
+elif ('linux' in curr_platform):
+    march = os.uname()[4]
+
+    if march == 'aarch64':
+        cpu_vendor = 'arm'
+    elif march == 'x86_64' or march == 'i386' or march == 'i686':
+        cpu_vendor = 'intel'
+    elif march == 'ppc64le':
+        cpu_vendor = 'ppc'
+    else:
+        raise Exception('Unknown CPU architecture: ' + march)
+
+    libzmq = CDLL(os.path.join(cur_dir, cpu_vendor, cpu_bits, 'libzmq.so'), use_errno=True)
+else:
+    raise Exception('Unsupported platform: ' + curr_platform)
 
 assert(libzmq)
 
